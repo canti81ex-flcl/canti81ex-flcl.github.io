@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko" data-lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BoomLine — Suo Games</title>
+<meta name="description" content="BoomLine: Chain Blast Puzzle. Hit the core — the whole board falls. Free on Google Play.">
+<meta property="og:title" content="BoomLine: Chain Blast Puzzle">
+<meta property="og:description" content="Chain blasts spread like dominoes. Hit the core — the whole board falls.">
+<meta property="og:image" content="https://canti81ex-flcl.github.io/boomline/media/og.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0d1022">
+<link rel="icon" href="/assets/bl-icon-32.png">
+<link rel="apple-touch-icon" href="/assets/bl-icon-180.png">
+<link rel="stylesheet" href="/assets/suo.css">
+<script src="/assets/suo.js"></script>
+<style>
+  .hero { padding: 48px 0 64px; }
+  .hero .grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 40px; align-items: center; }
+  .hero .logo { width: min(420px, 100%); height: auto; }
+  .hero .lead { margin: 18px 0 28px; }
+  .hero .acts { display: flex; flex-wrap: wrap; gap: 14px; }
+  .player { position: relative; border-radius: var(--radius); overflow: hidden; background: #000;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); border: 1px solid var(--line); aspect-ratio: 16 / 9; }
+  .player video { width: 100%; height: 100%; object-fit: cover; }
+  .sound { position: absolute; right: 12px; bottom: 12px; font: 15px var(--head); color: var(--ink);
+    background: rgba(13, 16, 34, 0.78); border: 1px solid rgba(255,255,255,.25); border-radius: 999px;
+    padding: 8px 14px; cursor: pointer; }
+  .sound:hover { background: rgba(13, 16, 34, 0.95); }
+
+  .feats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 28px; }
+  .feat { padding: 24px; }
+  .feat .chip { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font: 24px var(--head);
+    margin-bottom: 14px; color: #0d1022; }
+  .feat h3 { font-size: 22px; margin-bottom: 8px; }
+  .feat p { margin: 0; color: var(--dim); }
+  .feat .tracks { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .feat .tracks span { font: 14px var(--head); padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); }
+
+  .shots { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(200px, 240px); gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 2px 18px; margin-top: 24px;
+    scrollbar-color: var(--panel) transparent; }
+  .shots img { width: 100%; height: auto; aspect-ratio: 9 / 16; border-radius: 14px; scroll-snap-align: start;
+    border: 1px solid var(--line); background: var(--bg2); }
+  .shots-wrap { position: relative; }
+  .hint { color: var(--dim); font-size: 14px; margin: 4px 0 0; }
+
+  .yt { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding: 26px; }
+  .yt h3 { font-size: 24px; }
+  .yt p { margin: 4px 0 0; color: var(--dim); }
+
+  /* 의견 보내기 */
+  .fb { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 32px; align-items: start; }
+  .fb .note { color: var(--dim); }
+  .fb .note p { margin: 0 0 12px; }
+  form.card { padding: 24px; display: grid; gap: 16px; }
+  .field label, .field legend { display: block; font: 17px var(--head); margin-bottom: 8px; padding: 0; }
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; }
+  .cats input { position: absolute; opacity: 0; pointer-events: none; }
+  .cats label { margin: 0; font: 16px var(--head); padding: 8px 16px; border-radius: 999px; cursor: pointer;
+    background: var(--bg2); border: 2px solid var(--line); color: var(--dim); }
+  .cats input:checked + label { background: var(--orange); border-color: var(--orange); color: var(--orange-ink); }
+  .cats input:focus-visible + label { outline: 3px solid var(--cyan); outline-offset: 2px; }
+  textarea, input[type="text"] {
+    width: 100%; font: 16px/1.5 var(--body); color: var(--ink); background: var(--bg2);
+    border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  textarea { min-height: 150px; resize: vertical; }
+  textarea:focus, input[type="text"]:focus { border-color: var(--cyan); outline: none; }
+  .count { text-align: right; color: var(--dim); font-size: 13px; margin-top: 4px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .msg { margin: 0; font-size: 15px; }
+  .msg.ok { color: var(--green); }
+  .msg.err { color: #ff8a8a; }
+  button[disabled] { opacity: 0.6; cursor: default; }
+
+  @media (max-width: 860px) {
+    .hero .grid, .fb { grid-template-columns: 1fr; }
+    .hero .grid { gap: 28px; }
+    .hero .text { order: 2; }
+    .feats { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="dots"><i></i><i></i><i></i><i></i></span>Suo Games</a>
+    <nav>
+      <a class="hide-sm" href="#shots"><span lang="ko">스크린샷</span><span lang="en">Screens</span></a>
+      <a href="#feedback"><span lang="ko">의견 보내기</span><span lang="en">Feedback</span></a>
+      <button class="lang-btn" type="button" aria-label="Language"><span lang="ko">English</span><span lang="en">한국어</span></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero blocks-bg">
+    <div class="wrap grid">
+      <div class="text">
+        <h1><img class="logo" src="media/logo.png" alt="BoomLine" width="720" height="251"></h1>
+        <p class="lead" lang="ko">도미노처럼 번지는 연쇄 폭파 퍼즐.<br>코어를 맞히면 판이 무너진다.</p>
+        <p class="lead" lang="en">Chain blasts spread like dominoes.<br>Hit the core — the whole board falls.</p>
+        <div class="acts">
+          <a class="btn btn-play" href="https://play.google.com/store/apps/details?id=com.suo.boomline" rel="noopener">
+            <svg width="20" height="22" viewBox="0 0 20 22" aria-hidden="true"><path d="M1 1l11 10L1 21z" fill="#00a6c8"/><path d="M1 1l14 8-3 2z" fill="#00b860"/><path d="M1 21l14-8-3-2z" fill="#d8323c"/><path d="M15 9l4 2-4 2-3-2z" fill="#e0a800"/></svg>
+            <span lang="ko">Google Play에서 무료로 받기</span><span lang="en">Free on Google Play</span>
+          </a>
+        </div>
+      </div>
+      <div class="player">
+        <video id="trailer" src="media/trailer.mp4" poster="media/trailer.jpg" autoplay muted loop playsinline preload="metadata"
+               aria-label="BoomLine trailer"></video>
+        <button class="sound" type="button" id="sound" aria-pressed="false">
+          <span lang="ko">🔊 소리 켜기</span><span lang="en">🔊 Sound on</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="eyebrow"><span lang="ko">게임 소개</span><span lang="en">The game</span></div>
+      <h2 class="sec-title"><span lang="ko">코어를 무너뜨려라</span><span lang="en">Topple the core</span></h2>
+      <p class="lead" lang="ko">블록들은 서로 이어져 있습니다. 연쇄가 가장 멀리 번지는 자리 — 그게 코어입니다. 어디를 맞히느냐에서 모든 것이 시작됩니다.</p>
+      <p class="lead" lang="en">Blocks are linked. The spot where a chain spreads farthest — that's the core. It all starts with where you hit.</p>
+      <div class="feats">
+        <div class="card feat">
+          <div class="chip" style="background: var(--orange)">✦</div>
+          <h3><span lang="ko">읽고, 조준하고, 무너뜨려라</span><span lang="en">Read, aim, collapse</span></h3>
+          <p lang="ko">시작점 하나를 맞히면 연쇄가 판 위를 타고 번져 나갑니다. 라인, 십자, X자, 방향 기폭까지 — 새로 만난 블록은 도감에 차곡차곡 모입니다.</p>
+          <p lang="en">Hit one starting block and the chain spreads across the board. Lines, crosses, X-blasts, directional poppers — every new block you meet joins your codex.</p>
+        </div>
+        <div class="card feat">
+          <div class="chip" style="background: var(--cyan)">⚡</div>
+          <h3><span lang="ko">쏘고, 받고, 다시 쏘고</span><span lang="en">Shoot, catch, shoot again</span></h3>
+          <p lang="ko">떨어지는 탄을 로봇으로 받아내 다음 한 발을 이어갑니다. 판이 넓어질수록 연쇄는 더 길고 화려해집니다.</p>
+          <p lang="en">Catch falling shots with your robot to keep the run going. The wider the board, the longer and wilder the chains.</p>
+          <div class="tracks"><span style="color: var(--yellow)">Spark</span><span style="color: var(--cyan)">Volt</span><span style="color: #ff7a82">Thunder</span></div>
+        </div>
+        <div class="card feat">
+          <div class="chip" style="background: var(--green)">♪</div>
+          <h3><span lang="ko">내 취향대로</span><span lang="en">Make it yours</span></h3>
+          <p lang="ko">테마를 바꾸면 화면 전체가 새로워지고, 실제 악기를 녹음한 사운드로 연쇄가 터질 때마다 한 곡의 음악이 됩니다.</p>
+          <p lang="en">Switch themes and the whole screen looks brand new. Sounds recorded from real instruments turn every chain into music.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="shots">
+    <div class="wrap">
+      <div class="eyebrow"><span lang="ko">스크린샷</span><span lang="en">Screenshots</span></div>
+      <h2 class="sec-title"><span lang="ko">한 발에 판이 무너지는 순간</span><span lang="en">One shot. Whole board down.</span></h2>
+      <div class="shots" lang="ko" tabindex="0" aria-label="스크린샷">
+        <img src="media/shots/ko-1.webp" alt="코어를 맞히면 판이 무너진다" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-2.webp" alt="연쇄의 시작점, 코어를 찾아라" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-3.webp" alt="떨어지면 받아서 한 발 더" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-4.webp" alt="판이 커질수록 연쇄가 길다" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-5.webp" alt="만난 블록은 도감에 쌓인다" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-6.webp" alt="테마를 고르면 화면이 바뀐다" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-7.webp" alt="터진 칸수가 칭호가 된다" width="540" height="960" loading="lazy">
+        <img src="media/shots/ko-8.webp" alt="한 발 최고가 기록으로 남는다" width="540" height="960" loading="lazy">
+      </div>
+      <div class="shots" lang="en" tabindex="0" aria-label="Screenshots">
+        <img src="media/shots/en-1.webp" alt="Hit the core. The board falls." width="540" height="960" loading="lazy">
+        <img src="media/shots/en-2.webp" alt="Find the core. Start the chain." width="540" height="960" loading="lazy">
+        <img src="media/shots/en-3.webp" alt="Catch it. Keep the run." width="540" height="960" loading="lazy">
+        <img src="media/shots/en-4.webp" alt="Bigger board. Longer boom." width="540" height="960" loading="lazy">
+        <img src="media/shots/en-5.webp" alt="Meet them all. Fill the codex." width="540" height="960" loading="lazy">
+      </div>
+      <p class="hint" lang="ko">← 옆으로 넘겨 보세요 →</p>
+      <p class="hint" lang="en">← Swipe to see more →</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="card yt">
+        <div>
+          <h3><span lang="ko">쇼츠로 보기</span><span lang="en">Watch the Shorts</span></h3>
+          <p lang="ko">연쇄가 터지는 장면을 YouTube 쇼츠로 계속 올리고 있어요.</p>
+          <p lang="en">We keep posting chain-blast moments on YouTube Shorts.</p>
+        </div>
+        <a class="btn btn-ghost" href="https://www.youtube.com/@SuoShaGames/shorts" rel="noopener">YouTube @SuoShaGames ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="feedback">
+    <div class="wrap fb">
+      <div>
+        <div class="eyebrow"><span lang="ko">의견 보내기</span><span lang="en">Feedback</span></div>
+        <h2 class="sec-title"><span lang="ko">무엇이든 알려 주세요</span><span lang="en">Tell us anything</span></h2>
+        <div class="note">
+          <p lang="ko">버그, 아이디어, 하고 싶은 말 — 보내 주신 글은 개발자만 읽습니다. 다른 사람에게 공개되지 않습니다.</p>
+          <p lang="en">Bugs, ideas, anything on your mind — only the developer reads what you send. Nothing is shown publicly.</p>
+          <p lang="ko">이름·연락처 같은 개인정보는 적지 말아 주세요. 답장이 필요하면 <a href="mailto:canti81ex@gmail.com">canti81ex@gmail.com</a> 으로 메일 주세요.</p>
+          <p lang="en">Please don't include personal details like your name or contact info. If you'd like a reply, email <a href="mailto:canti81ex@gmail.com">canti81ex@gmail.com</a>.</p>
+        </div>
+      </div>
+      <form class="card" id="fb-form" novalidate>
+        <fieldset class="field">
+          <legend><span lang="ko">종류</span><span lang="en">Type</span></legend>
+          <div class="cats">
+            <input type="radio" name="cat" id="cat-bug" value="bug" checked><label for="cat-bug"><span lang="ko">🐞 버그</span><span lang="en">🐞 Bug</span></label>
+            <input type="radio" name="cat" id="cat-idea" value="idea"><label for="cat-idea"><span lang="ko">💡 아이디어</span><span lang="en">💡 Idea</span></label>
+            <input type="radio" name="cat" id="cat-other" value="other"><label for="cat-other"><span lang="ko">💬 기타</span><span lang="en">💬 Other</span></label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="fb-msg"><span lang="ko">내용</span><span lang="en">Message</span></label>
+          <textarea id="fb-msg" maxlength="2000" required></textarea>
+          <div class="count"><span id="fb-count">0</span> / 2000</div>
+        </div>
+        <div class="field">
+          <label for="fb-dev"><span lang="ko">기기 (선택)</span><span lang="en">Device (optional)</span></label>
+          <input type="text" id="fb-dev" maxlength="60" autocomplete="off">
+        </div>
+        <div class="hp" aria-hidden="true"><label for="fb-web">Website</label><input type="text" id="fb-web" tabindex="-1" autocomplete="off"></div>
+        <div class="row">
+          <button class="btn btn-play" type="submit" id="fb-send"><span lang="ko">보내기</span><span lang="en">Send</span></button>
+          <p class="msg" id="fb-msg-out" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="copy">© 2026 Suo Games</span>
+    <a href="/boomline-site/" lang="ko">개인정보처리방침</a>
+    <a href="/boomline-site/en.html" lang="en">Privacy Policy</a>
+    <a href="/boomline-site/terms.html" lang="ko">이용약관</a>
+    <a href="/boomline-site/terms-en.html" lang="en">Terms of Service</a>
+    <a href="mailto:canti81ex@gmail.com">canti81ex@gmail.com</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // 트레일러 소리 — 자동 재생은 음소거여야 브라우저가 튼다. 누르면 소리를 켜고 처음부터.
+  var v = document.getElementById("trailer"), s = document.getElementById("sound");
+  var LABEL = { ko: ["🔊 소리 켜기", "🔇 소리 끄기"], en: ["🔊 Sound on", "🔇 Sound off"] };
+  s.addEventListener("click", function () {
+    v.muted = !v.muted;
+    if (!v.muted) { v.currentTime = 0; v.play(); }
+    s.setAttribute("aria-pressed", String(!v.muted));
+    s.children[0].textContent = LABEL.ko[v.muted ? 0 : 1];
+    s.children[1].textContent = LABEL.en[v.muted ? 0 : 1];
+  });
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) { v.removeAttribute("autoplay"); v.pause(); }
+
+  // 의견 보내기 — Firebase RTDB /fb 에 새 줄 하나(규칙이 쓰기만 받는다 · 읽기 막힘). 개인정보 칸은 두지 않는다.
+  var URL = "https://boomline-1b15f-default-rtdb.asia-southeast1.firebasedatabase.app/fb.json";
+  var form = document.getElementById("fb-form"), msg = document.getElementById("fb-msg"),
+      dev = document.getElementById("fb-dev"), out = document.getElementById("fb-msg-out"),
+      send = document.getElementById("fb-send"), count = document.getElementById("fb-count");
+  var T = {
+    ko: { short: "두 글자 이상 적어 주세요.", wait: "조금 뒤에 다시 보내 주세요.", sending: "보내는 중…",
+          ok: "고맙습니다! 잘 받았어요.", fail: "보내지 못했어요. 잠시 뒤 다시 시도하거나 메일로 보내 주세요." },
+    en: { short: "Please write at least 2 characters.", wait: "Please wait a moment before sending again.", sending: "Sending…",
+          ok: "Thank you! We got it.", fail: "Couldn't send. Please try again later, or email us." }
+  };
+  function say(key, cls) { out.textContent = T[window.suoLang()][key]; out.className = "msg " + (cls || ""); }
+  function last() { try { return +localStorage.getItem("suo-fb-at") || 0; } catch (e) { return 0; } }
+  msg.addEventListener("input", function () { count.textContent = msg.value.length; });
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = msg.value.trim();
+    if (text.length < 2) { say("short", "err"); msg.focus(); return; }
+    if (Date.now() - last() < 60000) { say("wait", "err"); return; }
+    if (document.getElementById("fb-web").value) { say("ok", "ok"); form.reset(); return; }   // 봇 함정 칸
+    send.disabled = true; say("sending");
+    fetch(URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        game: "boomline",
+        cat: form.querySelector("input[name=cat]:checked").value,
+        msg: text,
+        dev: dev.value.trim().slice(0, 60),
+        lang: window.suoLang(),
+        t: { ".sv": "timestamp" }
+      })
+    }).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      try { localStorage.setItem("suo-fb-at", String(Date.now())); } catch (e) {}
+      form.reset(); count.textContent = "0"; say("ok", "ok");
+    }).catch(function () { say("fail", "err"); })
+      .then(function () { send.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>
